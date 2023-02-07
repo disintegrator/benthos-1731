@@ -1,0 +1,50 @@
+input:
+  label: proxy
+  http_server:
+    address: localhost:3000
+    path: "/"
+    allowed_verbs: [POST]
+    sync_response:
+      status: '${! meta("http_status_code").or(500) }'
+
+pipeline:
+  processors:
+    - label: find_proxy_target
+      mapping: |
+        let requested = "%s %s".format(
+          meta("http_server_verb").uppercase(),
+          meta("http_server_request_path")
+        )
+
+        meta handler = match $requested {
+          "POST /rpc/oauth" => "handle_oauth_rpc"
+          "POST /rpc/create-account" => "handle_account_rpc"
+          "POST /rpc/update-account" => "handle_account_rpc"
+          "POST /rpc/delete-account" => "handle_account_rpc"
+          "POST /rpc/process-upload" => "handle_upload_rpc"
+        }
+
+output:
+  label: multiplex
+  switch:
+    cases:
+      - check: meta("handler") == "handle_oauth_rpc"
+        output:
+          label: proxy_oauth_rpc
+          inproc: handle_oauth_rpc
+      - check: meta("handler") == "handle_account_rpc"
+        output:
+          label: proxy_account_rpc
+          inproc: handle_account_rpc
+      - check: meta("handler") == "handle_upload_rpc"
+        output:
+          label: proxy_upload_rpc
+          inproc: handle_upload_rpc
+      - output:
+          label: not_found_catchall
+          sync_response: {}
+          processors:
+            - label: not_found_response
+              mapping: |
+                meta http_status_code = 404
+                root = {"error": "resource not found"}

@@ -1,0 +1,13 @@
+input:
+  inproc: handle_account_rpc
+
+pipeline:
+  processors:
+    - log:
+        message: "processing accounts rpc"
+    - mapping: |
+        root = {"message": "hello from accounts"}
+
+output:
+  sync_response: {}
+

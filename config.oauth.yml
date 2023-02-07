@@ -1,0 +1,12 @@
+input:
+  inproc: handle_oauth_rpc
+
+pipeline:
+  processors:
+    - log:
+        message: "processing oauth rpc"
+    - mapping: |
+        root = {"message": "hello from oauth"}
+
+output:
+  sync_response: {}

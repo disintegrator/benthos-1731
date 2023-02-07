@@ -1,0 +1,12 @@
+input:
+  inproc: handle_upload_rpc
+
+pipeline:
+  processors:
+    - log:
+        message: "processing uploads rpc"
+    - mapping: |
+        root = {"message": "hello from uploads"}
+
+output:
+  sync_response: {}
